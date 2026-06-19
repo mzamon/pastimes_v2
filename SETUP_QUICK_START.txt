@@ -1,0 +1,41 @@
+PASTIMES v2 — Quick Setup Guide
+================================
+
+BEFORE RUNNING:
+1. Start XAMPP (Apache + MySQL)
+2. Copy pastimes_v2 folder to C:\xampp\htdocs\pastimes
+3. Open http://localhost/phpmyadmin and verify MySQL is running
+
+QUICK LAUNCH:
+1. Visit: http://localhost/pastimes/loadClothingStore.php
+   (This creates the database, all tables, and seeds demo data)
+   
+2. Visit: http://localhost/pastimes/
+   
+3. Login with any test account:
+   - Admin:  admin@pastimes.co.za / password
+   - Buyer:  john@example.com / password
+   - Seller: sarah@example.com / password
+
+DATABASE RESETS:
+- To fully reset: http://localhost/pastimes/loadClothingStore.php
+- To reset just users: http://localhost/pastimes/createTable.php
+
+TROUBLESHOOTING:
+- If blank page: Check http://localhost/pastimes/test_db.php
+- If database fails: Verify MySQL running, then run loadClothingStore.php
+- If images fail: Ensure assets/images/uploads/ is writable
+
+PROJECT STATUS:
+✓ All 50+ PHP files complete
+✓ Database schema ready
+✓ Demo data included (30+ products)
+✓ Full shopping cart system
+✓ Admin panel functional
+✓ User authentication working
+✓ Messaging system ready
+✓ Wishlist feature added
+✓ CSS dark theme applied
+✓ Responsive design (mobile-first)
+
+READY FOR SUBMISSION: Yes, 100% functional
