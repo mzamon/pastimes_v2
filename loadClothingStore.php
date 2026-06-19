@@ -47,7 +47,7 @@ if ($mysqli->multi_query($sql)) {
 }
 
 // ── Seed 30 clothing-appropriate demo products ───────────────
-$hash = password_hash('password', PASSWORD_DEFAULT);
+$hash = '{{BCRYPT_HASH}}';  // <-- REPLACE with your generated hash for Kookemooi10!
 
 // Ensure demo seller exists
 $mysqli->query(
@@ -136,9 +136,9 @@ foreach ($demoProducts as $i => $dp) {
 
 echo "✓  $inserted demo products inserted\n";
 echo "✓  Setup complete!\n\n";
-echo "ACCOUNTS (password: <b>password</b>)\n";
+echo "ACCOUNTS (password: <b>Kookemooi10!</b>)\n";
 echo "  Admin:  admin@pastimes.co.za\n";
-echo "  Buyer:  john@example.com\n";
+echo "  Buyer:  koos@gmail.com\n";
 echo "  Seller: sarah@example.com\n";
 echo "  Seller: mike@example.com\n";
 echo "\n<a href='index.php'>→ Visit your website</a>\n";

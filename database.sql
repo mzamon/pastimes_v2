@@ -1,7 +1,7 @@
 -- ============================================================
--- Pastimes — ClothingStore Schema
--- WEDE6021 POE | Single source of truth
--- Run via: loadClothingStore.php
+-- Pastimes — ClothingStore Schema (Complete)
+-- WEDE6021 POE | Mzamo Ndlovu | June 2026
+-- Password for all accounts: Kookemooi10!
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS ClothingStore
@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS tblWishlist, tblReviews, tblMessages, order_items,
                      tblSellerRequests, tblUser;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ── 1. Users ────────────────────────────────────────────────
+-- ── tblUser ──────────────────────────────────────────────────
 CREATE TABLE tblUser (
     id                  INT          AUTO_INCREMENT PRIMARY KEY,
     name                VARCHAR(100) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE tblUser (
     INDEX idx_role  (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 1b. Seller Requests (motivation text + status history) ──
+-- ── tblSellerRequests ──────────────────────────────────────
 CREATE TABLE tblSellerRequests (
     user_id      INT  NOT NULL,
     motivation   TEXT NULL,
@@ -43,19 +43,19 @@ CREATE TABLE tblSellerRequests (
     FOREIGN KEY (user_id) REFERENCES tblUser(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 2. Categories ───────────────────────────────────────────
+-- ── categories ──────────────────────────────────────────────
 CREATE TABLE categories (
     id   INT         AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(60) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 3. Products (with brand column) ────────────────────────
+-- ── tblProducts ─────────────────────────────────────────────
 CREATE TABLE tblProducts (
     id          INT           AUTO_INCREMENT PRIMARY KEY,
     seller_id   INT           NOT NULL,
     category_id INT           NOT NULL,
     title       VARCHAR(150)  NOT NULL,
-    brand       VARCHAR(100)  NULL,                          -- Brand of the clothing
+    brand       VARCHAR(100)  NULL,
     description TEXT          NOT NULL,
     price       DECIMAL(10,2) NOT NULL CHECK (price > 0),
     `condition` ENUM('New','Like New','Good','Fair','Poor') NOT NULL DEFAULT 'Good',
@@ -70,7 +70,7 @@ CREATE TABLE tblProducts (
     FULLTEXT INDEX idx_search (title, description)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 4. Cart Items (DB-persisted, normalisation requirement) ─
+-- ── cart_items ──────────────────────────────────────────────
 CREATE TABLE cart_items (
     id         INT      AUTO_INCREMENT PRIMARY KEY,
     user_id    INT      NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE cart_items (
     FOREIGN KEY (product_id) REFERENCES tblProducts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 5. Orders ───────────────────────────────────────────────
+-- ── tblOrders ───────────────────────────────────────────────
 CREATE TABLE tblOrders (
     id               INT           AUTO_INCREMENT PRIMARY KEY,
     buyer_id         INT           NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE tblOrders (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 6. Order Items (tblOrderLine — preserves price) ─────────
+-- ── order_items ─────────────────────────────────────────────
 CREATE TABLE order_items (
     id                INT           AUTO_INCREMENT PRIMARY KEY,
     order_id          INT           NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE order_items (
     INDEX idx_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 7. Messages (product_id nullable for general messages) ──
+-- ── tblMessages ─────────────────────────────────────────────
 CREATE TABLE tblMessages (
     id          INT          AUTO_INCREMENT PRIMARY KEY,
     sender_id   INT          NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE tblMessages (
     INDEX idx_receiver (receiver_id, is_read)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 8. Reviews ──────────────────────────────────────────────
+-- ── tblReviews ──────────────────────────────────────────────
 CREATE TABLE tblReviews (
     id          INT      AUTO_INCREMENT PRIMARY KEY,
     reviewer_id INT      NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE tblReviews (
     FOREIGN KEY (product_id)  REFERENCES tblProducts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── 9. Wishlist (innovative feature) ────────────────────────
+-- ── tblWishlist ─────────────────────────────────────────────
 CREATE TABLE tblWishlist (
     id         INT      AUTO_INCREMENT PRIMARY KEY,
     user_id    INT      NOT NULL,
@@ -148,17 +148,17 @@ CREATE TABLE tblWishlist (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- SAMPLE DATA
--- Password for ALL accounts: password
--- Hash: $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- SAMPLE DATA (all passwords = Kookemooi10!)
+-- Replace {{BCRYPT_HASH}} with your generated hash
 -- ============================================================
 
 INSERT INTO tblUser (name, email, password_hash, role, is_verified, seller_request, seller_request_note) VALUES
-('Admin User',   'admin@pastimes.co.za',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin',  1, 'none',     NULL),
-('John Buyer',   'john@example.com',      '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'buyer',  1, 'none',     NULL),
-('Sarah Seller', 'sarah@example.com',     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'seller', 1, 'approved', 'Vintage clothing and outerwear'),
-('Mike Seller',  'mike@example.com',      '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'seller', 1, 'approved', 'Streetwear and branded sneakers'),
-('Pending User', 'pending@example.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'buyer',  0, 'none',     NULL);
+('Admin User',   'admin@pastimes.co.za',  '{{BCRYPT_HASH}}', 'admin',  1, 'none',     NULL),
+('Koos Kookemooi', 'koos@gmail.com',       '{{BCRYPT_HASH}}', 'buyer',  1, 'none',     NULL),
+('Sarah Seller', 'sarah@example.com',     '{{BCRYPT_HASH}}', 'seller', 1, 'approved', 'Vintage clothing and outerwear'),
+('Mike Seller',  'mike@example.com',      '{{BCRYPT_HASH}}', 'seller', 1, 'approved', 'Streetwear and branded sneakers'),
+('Demo Seller',  'demo@pastimes.co.za',   '{{BCRYPT_HASH}}', 'seller', 1, 'approved', 'Demo seller account'),
+('Demo Buyer',   'buyer@pastimes.co.za',  '{{BCRYPT_HASH}}', 'buyer',  1, 'none',     NULL);
 
 INSERT INTO categories (name) VALUES
 ("Men's Clothing"),
@@ -170,20 +170,37 @@ INSERT INTO categories (name) VALUES
 ('Vintage'),
 ('Sportswear');
 
--- Products now include a brand column (added after title)
 INSERT INTO tblProducts (seller_id, category_id, title, brand, description, price, `condition`, image, quantity, status) VALUES
-(3, 7, 'Vintage Levi\'s 501 Jeans',          'Levi\'s',      'Classic straight-cut 501s from the 90s. Size 32x32. Faded wash, all buttons intact.',           350.00, 'Good',     'vintage-clothing/denim-jacket-1.jpg',   1, 'active'),
-(3, 4, 'Guess Sherpa Denim Jacket',          'Guess',        'Lined denim jacket with sherpa collar. Size M. Barely worn, all zips and buttons work.',          680.00, 'Like New', 'vintage-clothing/leather-jacket-1.jpg', 1, 'active'),
-(4, 3, 'Supreme Box Logo Hoodie',            'Supreme',      'Authentic Supreme hoodie in black, size L. Some pilling but a rare find.',                         950.00, 'Good',     'streetwear/hoodie-black-1.jpg',         1, 'active'),
-(4, 5, 'Nike Air Force 1 Low White',         'Nike',         'Classic white AF1s, size 10. Worn 3 times, box included. 100% authentic.',                       1100.00, 'Like New', 'streetwear/sneakers-hightop-1.jpg',     1, 'active'),
-(3, 2, 'Zara Floral Midi Dress',             'Zara',         'Beautiful floral midi dress, size S. Worn once at a wedding. Perfect condition.',                   420.00, 'Like New', 'vintage-clothing/denim-jacket-2.jpg',   1, 'active'),
-(4, 6, 'Woolworths Genuine Leather Belt',    'Woolworths',   'Full-grain leather belt, size 34. Brown with brass buckle. Barely used.',                          180.00, 'Good',     'accessories/leather-belt-1.jpg',        2, 'active'),
-(3, 1, 'Ralph Lauren Polo Shirt',            'Ralph Lauren', 'Classic fit polo in navy, size L. Minor wear on collar. Great casual piece.',                       220.00, 'Good',     'vintage-clothing/denim-jacket-1.jpg',   1, 'active'),
-(4, 8, 'Adidas Tiro Track Pants',            'Adidas',       'Iconic 3-stripe track pants in black/white, size M. Used for gym — clean and no damage.',           190.00, 'Good',     'sports-gear/running-shorts-1.jpg',      2, 'active'),
-(3, 3, 'Champion Reverse Weave Sweatshirt',  'Champion',     'Heavy-duty reverse weave crewneck, ash grey, size XL. Some fading but that\'s the aesthetic.',     310.00, 'Fair',     'streetwear/hoodie-black-1.jpg',         1, 'active'),
-(4, 5, 'New Balance 574 Grey',               'New Balance',  'Classic NB574 in grey/white, size 9. Well-loved but plenty of life left. No box.',                  480.00, 'Fair',     'sports-gear/gym-tanktop-1.jpg',         1, 'active'),
-(3, 4, 'North Face Puffer Jacket',           'North Face',   'Black 700-fill down puffer, size L. A few seasons old but fully functional. Warm.',                 890.00, 'Good',     'vintage-clothing/leather-jacket-1.jpg', 1, 'active'),
-(4, 2, 'H&M Linen Blazer',                   'H&M',          'Sand-coloured linen blazer, size 40. One previous season, immaculate condition.',                   340.00, 'Like New', 'vintage-clothing/denim-jacket-2.jpg',   1, 'active');
+(3, 7, 'Vintage Levi\'s 501 Jeans',          'Levi\'s',      'Classic straight-cut 501s from the 90s. Size 32x32. Faded wash.', 350.00, 'Good',     'vintage-clothing/denim-jacket-1.jpg',   1, 'active'),
+(3, 4, 'Guess Sherpa Denim Jacket',          'Guess',        'Lined denim jacket with sherpa collar. Size M. Barely worn.',          680.00, 'Like New', 'vintage-clothing/leather-jacket-1.jpg', 1, 'active'),
+(4, 3, 'Supreme Box Logo Hoodie',            'Supreme',      'Black hoodie, size L. Some pilling but rare.',                         950.00, 'Good',     'streetwear/hoodie-black-1.jpg',         1, 'active'),
+(4, 5, 'Nike Air Force 1 Low White',         'Nike',         'Classic white AF1s, size 10. Worn 3 times.',                          1100.00, 'Like New', 'streetwear/sneakers-hightop-1.jpg',     1, 'active'),
+(3, 2, 'Zara Floral Midi Dress',             'Zara',         'Beautiful floral midi dress, size S. Perfect condition.',               420.00, 'Like New', 'vintage-clothing/denim-jacket-2.jpg',   1, 'active'),
+(4, 6, 'Woolworths Genuine Leather Belt',    'Woolworths',   'Full-grain leather belt, size 34. Brown with brass buckle.',            180.00, 'Good',     'accessories/leather-belt-1.jpg',        2, 'active'),
+(3, 1, 'Ralph Lauren Polo Shirt',            'Ralph Lauren', 'Navy polo, size L. Minor wear on collar.',                              220.00, 'Good',     'vintage-clothing/denim-jacket-1.jpg',   1, 'active'),
+(4, 8, 'Adidas Tiro Track Pants',            'Adidas',       '3-stripe track pants in black/white, size M.',                          190.00, 'Good',     'sports-gear/running-shorts-1.jpg',      2, 'active'),
+(3, 3, 'Champion Reverse Weave Sweatshirt',  'Champion',     'Ash grey crewneck, size XL. Some fading.',                              310.00, 'Fair',     'streetwear/hoodie-black-1.jpg',         1, 'active'),
+(4, 5, 'New Balance 574 Grey',               'New Balance',  'Grey/white NB574, size 9. Well-loved.',                                 480.00, 'Fair',     'sports-gear/gym-tanktop-1.jpg',         1, 'active'),
+(3, 4, 'North Face Puffer Jacket',           'North Face',   'Black 700-fill down puffer, size L.',                                   890.00, 'Good',     'vintage-clothing/leather-jacket-1.jpg', 1, 'active'),
+(4, 2, 'H&M Linen Blazer',                   'H&M',          'Sand-coloured linen blazer, size 40.',                                  340.00, 'Like New', 'vintage-clothing/denim-jacket-2.jpg',   1, 'active'),
+(5, 1, 'Tommy Hilfiger Chino Pants',         'Tommy Hilfiger','Khaki chino pants, size 32x30.',                                      260.00, 'Good',     'streetwear/hoodie-black-1.jpg',         2, 'active'),
+(5, 7, 'Vintage Lee Riders Jacket',          'Lee',          'Stonewash denim jacket, size L. 1980s.',                                520.00, 'Fair',     'vintage-clothing/denim-jacket-1.jpg',   1, 'active'),
+(5, 5, 'Converse Chuck Taylor High',         'Converse',     'Red high-top sneakers, size 9.',                                        380.00, 'Fair',     'streetwear/sneakers-hightop-1.jpg',     2, 'active'),
+(5, 2, 'Woolworths Linen Trousers',          'Woolworths',   'White wide-leg linen trousers, size 12.',                                150.00, 'Good',     'vintage-clothing/denim-jacket-2.jpg',   2, 'active'),
+(5, 8, 'Asics Gel-Nimbus 24',                'Asics',        'Running shoes, size 10. Used for 3 months.',                            720.00, 'Fair',     'sports-gear/gym-tanktop-1.jpg',         1, 'active'),
+(3, 1, 'Polo Ralph Lauren Oxford Shirt',     'Ralph Lauren', 'Blue stripe Oxford shirt, size M.',                                     280.00, 'Good',     'vintage-clothing/leather-jacket-1.jpg', 2, 'active'),
+(4, 4, 'Stone Island Nylon Jacket',          'Stone Island', 'Dark navy nylon jacket, size L. Authentic.',                           1800.00, 'Good',     'outerwear/puffer-jacket-1.jpg',         1, 'active'),
+(3, 7, 'Diesel Regular Denim Jacket',        'Diesel',       'Distressed wash denim jacket, size M.',                                 430.00, 'Fair',     'vintage-clothing/denim-jacket-2.jpg',   1, 'active'),
+(4, 2, 'H&M Knit Cardigan',                  'H&M',          'Cream open-front cardigan, size S.',                                    90.00, 'Like New', 'vintage-clothing/leather-jacket-1.jpg', 3, 'active'),
+(3, 3, 'Puma RS-X Sneakers',                 'Puma',         'White/blue chunky runner, size 9.',                                     510.00, 'Good',     'streetwear/sneakers-hightop-1.jpg',     2, 'active'),
+(5, 6, 'Michael Kors Tote Bag',              'Michael Kors', 'Black leather tote bag. Minor pen mark.',                              950.00, 'Fair',     'accessories/leather-belt-1.jpg',        1, 'active'),
+(4, 1, 'Ben Sherman Mod Shirt',              'Ben Sherman',  'Paisley print shirt, size L.',                                         140.00, 'Good',     'vintage-clothing/denim-jacket-1.jpg',   2, 'active'),
+(5, 5, 'Reebok Classic Leather',             'Reebok',       'White classic leather trainers, size 8.5.',                            340.00, 'Good',     'streetwear/sneakers-hightop-1.jpg',     2, 'active'),
+(3, 5, 'Sperry Topsider Boat Shoes',         'Sperry',       'Tan leather boat shoes, size 10.',                                     420.00, 'Good',     'sports-gear/running-shorts-1.jpg',      1, 'active'),
+(4, 4, 'Columbia Fleece Jacket',             'Columbia',     'Blue zip-up fleece jacket, size XL.',                                  290.00, 'Good',     'outerwear/puffer-jacket-1.jpg',         2, 'active'),
+(5, 2, 'Topshop Denim Cut-offs',             'Topshop',      'Frayed hem denim cut-offs, size 10.',                                  110.00, 'Good',     'vintage-clothing/denim-jacket-2.jpg',   3, 'active'),
+(3, 3, 'Dickies 874 Work Pants',             'Dickies',      'Khaki work pants, size 34x32.',                                        220.00, 'Like New', 'streetwear/hoodie-black-1.jpg',         2, 'active'),
+(4, 8, 'Nike Flex Shorts',                   'Nike',         'Black athletic shorts, size M.',                                        85.00, 'Good',     'sports-gear/running-shorts-1.jpg',      4, 'active');
 
 INSERT INTO tblOrders (buyer_id, total, delivery_address, status, tracking_number, payment_method) VALUES
 (2, 450.00,  '123 Main Street, Johannesburg, 2000', 'Delivered',  'TRK000001', 'Credit Card'),
