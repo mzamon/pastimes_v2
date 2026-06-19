@@ -1,16 +1,18 @@
 <?php
 /**
  * includes/functions.php
- * Core utilities: session bootstrap, auth guards, helpers
+ * Core utilities: session bootstrap, BASE_URL, auth guards, helpers.
+ * WEDE6021 POE — Pastimes
  */
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// BASE_URL auto-detection
-$_scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/');
-define('BASE_URL', strpos($_scriptName, '/pastimes/') === 0 ? '/pastimes/' : '/');
+// ── BASE_URL ──────────────────────────────────────────────────
+define('BASE_URL', '/pastimes_v2/');  // <-- MAKE SURE THIS MATCHES YOUR FOLDER
+
+// ── Directories ──────────────────────────────────────────────
 define('UPLOAD_DIR', __DIR__ . '/../assets/images/uploads/');
 define('IMAGE_BASE', BASE_URL . 'assets/images/');
 

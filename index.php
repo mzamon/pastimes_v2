@@ -42,8 +42,17 @@ require_once __DIR__ . '/includes/header.php';
         <p>Discover authentic vintage and pre-loved clothing</p>
         <div class="hero-actions">
             <a href="<?php echo BASE_URL; ?>products/index.php" class="btn btn-primary btn-lg">Browse Now</a>
-            <?php if (!isSeller()): ?>
-                <a href="<?php echo BASE_URL; ?>auth/<?php echo isLoggedIn() ? 'request_seller.php' : 'register.php'; ?>" class="btn btn-outline">Sell With Us</a>
+
+            <?php if (isLoggedIn()): ?>
+                <!-- Logged In: Show Logout -->
+                <a href="<?php echo BASE_URL; ?>auth/logout.php" class="btn btn-outline btn-lg">Logout</a>
+                <?php if (isBuyer()): ?>
+                    <a href="<?php echo BASE_URL; ?>auth/request_seller.php" class="btn btn-outline btn-lg">Sell With Us</a>
+                <?php endif; ?>
+            <?php else: ?>
+                <!-- Not Logged In: Show Login & Register -->
+                <a href="<?php echo BASE_URL; ?>auth/login.php" class="btn btn-outline btn-lg">Sign In</a>
+                <a href="<?php echo BASE_URL; ?>auth/register.php" class="btn btn-outline btn-lg">Register</a>
             <?php endif; ?>
         </div>
     </div>
@@ -135,7 +144,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <style>
 .hero {
-    background: linear-gradient(135deg, var(--primary-red) 0%, #8b0000 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #8b0000 100%);
     color: white;
     padding: 60px 20px;
     text-align: center;
@@ -176,7 +185,7 @@ require_once __DIR__ . '/includes/header.php';
 
 .btn-outline:hover {
     background: white;
-    color: var(--primary-red);
+    color: var(--primary);
 }
 
 .stats-section {
@@ -200,7 +209,7 @@ require_once __DIR__ . '/includes/header.php';
 .stat-number {
     font-size: 2.5em;
     font-weight: bold;
-    color: var(--primary-red);
+    color: var(--primary);
     margin-bottom: 10px;
 }
 
@@ -214,7 +223,7 @@ require_once __DIR__ . '/includes/header.php';
     font-size: 2em;
     margin: 60px 0 30px 0;
     text-align: center;
-    border-bottom: 3px solid var(--primary-red);
+    border-bottom: 3px solid var(--primary);
     padding-bottom: 15px;
 }
 
@@ -242,14 +251,14 @@ require_once __DIR__ . '/includes/header.php';
 }
 
 .category-card:hover {
-    border-color: var(--primary-red);
+    border-color: var(--primary);
     background: var(--bg);
     transform: translateY(-4px);
 }
 
 .category-card.all {
-    border-color: var(--primary-red);
-    background: var(--primary-red);
+    border-color: var(--primary);
+    background: var(--primary);
     color: white;
 }
 
@@ -264,7 +273,7 @@ require_once __DIR__ . '/includes/header.php';
 }
 
 .cta-section {
-    background: linear-gradient(135deg, var(--primary-red) 0%, #8b0000 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #8b0000 100%);
     color: white;
     padding: 60px 20px;
     margin-top: 60px;

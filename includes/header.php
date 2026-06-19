@@ -54,9 +54,12 @@
                         <?php echo verificationBadge($_SESSION['is_verified'] ?? 0); ?>
                     </li>
                     <li><a href="<?php echo BASE_URL; ?>auth/logout.php" class="btn btn-outline-sm">Logout</a></li>
+
                 <?php else: ?>
-                    <li><a href="<?php echo BASE_URL; ?>auth/login.php">Login</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>auth/register.php" class="btn btn-primary-sm">Register</a></li>
+                    <!-- NOT LOGGED IN: Show Login and Register -->
+                    <li><a href="<?php echo BASE_URL; ?>auth/login.php" class="btn btn-primary-sm">Login</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>auth/register.php" class="btn btn-secondary-sm">Register</a></li>
+                    <li><a href="<?php echo BASE_URL; ?>auth/admin_login.php">Admin</a></li>
                 <?php endif; ?>
             </ul>
         </nav>
