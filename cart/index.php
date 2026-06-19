@@ -26,7 +26,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
-                    <tr><th>Item</th><th>Unit Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
+                    <tr><th>Item</th><th>Brand</th><th>Unit Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
                 </thead>
                 <tbody>
                     <?php foreach ($cart as $pid => $item):
@@ -41,6 +41,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span><?php echo h($item['title']); ?></span>
                             </div>
                         </td>
+                        <td><?php echo h($item['brand'] ?? '—'); ?></td>
                         <td>R <?php echo number_format($item['price'], 2); ?></td>
                         <td>
                             <form method="POST" action="update.php" style="display:inline-flex;gap:0.4rem;align-items:center;">

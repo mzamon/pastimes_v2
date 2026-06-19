@@ -32,6 +32,15 @@ if (isLoggedIn() && !$isOwner) {
     mysqli_stmt_close($wst);
 }
 
+$rst = mysqli_prepare($conn,
+    "SELECT r.*, u.name AS reviewer_name FROM tblReviews r
+     JOIN tblUser u ON r.reviewer_id = u.id
+     WHERE r.product_id = ? ORDER BY r.created_at DESC");
+mysqli_stmt_bind_param($rst, 'i', $id);
+mysqli_stmt_execute($rst);
+$reviews = mysqli_fetch_all(mysqli_stmt_get_result($rst), MYSQLI_ASSOC);
+mysqli_stmt_close($rst);
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 <div class="product-detail">
@@ -42,6 +51,9 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="product-info">
         <p class="product-meta"><?php echo h($product['category_name']); ?> · <?php echo h($product['condition']); ?></p>
         <h1><?php echo h($product['title']); ?></h1>
+        <?php if (!empty($product['brand'])): ?>
+            <p class="product-meta"><strong>Brand:</strong> <?php echo h($product['brand']); ?></p>
+        <?php endif; ?>
         <div class="product-price">R <?php echo number_format($product['price'], 2); ?></div>
         <p class="product-meta">In stock: <strong><?php echo (int)$product['quantity']; ?></strong></p>
         <p style="margin-bottom:1rem;"><?php echo nl2br(h($product['description'])); ?></p>
@@ -54,6 +66,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <a href="<?php echo BASE_URL; ?>products/delete.php?id=<?php echo $product['id']; ?>" class="btn btn-danger">Delete</a>
             <?php else: ?>
                 <a href="<?php echo BASE_URL; ?>cart/add.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-lg">Add to Cart</a>
+                <a href="<?php echo BASE_URL; ?>messages/chat.php?user_id=<?php echo $product['seller_id']; ?>&product_id=<?php echo $product['id']; ?>" class="btn btn-secondary">Message Seller</a>
                 <?php if (isLoggedIn()): ?>
                     <?php if ($inWishlist): ?>
                         <a href="<?php echo BASE_URL; ?>wishlist/remove.php?id=<?php echo $product['id']; ?>&back=product" class="btn btn-secondary">♥ Remove from Wishlist</a>
@@ -68,4 +81,16 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<h2 class="section-title" style="margin-top:2.5rem;">Reviews</h2>
+<?php if (empty($reviews)): ?>
+    <p class="text-muted">No reviews yet.</p>
+<?php else: ?>
+    <?php foreach ($reviews as $r): ?>
+        <div class="review-card">
+            <div class="review-stars"><?php echo str_repeat('★', $r['rating']) . str_repeat('☆', 5 - $r['rating']); ?></div>
+            <div class="review-body"><?php echo h($r['comment']); ?></div>
+            <div class="review-meta">— <?php echo h($r['reviewer_name']); ?>, <?php echo date('d M Y', strtotime($r['created_at'])); ?></div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

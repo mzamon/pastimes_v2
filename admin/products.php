@@ -1,7 +1,7 @@
 <?php
 /**
  * admin/products.php
- * Admin view/manage all product listings
+ * Admin view/manage all product listings with search, filter, and brand column
  */
 $pageTitle = 'Manage Products';
 require_once __DIR__ . '/../config/db.php';
@@ -70,32 +70,31 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Title</th>
-                    <th>Seller</th>
+                    <th>Brand</th>
                     <th>Category</th>
+                    <th>Seller</th>
                     <th>Price</th>
-                    <th>Condition</th>
+                    <th>Qty</th>
                     <th>Status</th>
-                    <th>Listed</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($products as $p): ?>
                     <tr>
-                        <td><?php echo h(substr($p['title'], 0, 40)); ?></td>
-                        <td><?php echo h($p['seller_name']); ?></td>
+                        <td><img src="<?php echo getProductImage($p['image']); ?>" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;"></td>
+                        <td><?php echo h($p['title']); ?></td>
+                        <td><?php echo h($p['brand'] ?? '—'); ?></td>
                         <td><?php echo h($p['category_name']); ?></td>
-                        <td>R<?php echo number_format($p['price'], 2); ?></td>
-                        <td><span class="badge condition-<?php echo strtolower($p['condition']); ?>"><?php echo h($p['condition']); ?></span></td>
-                        <td><span class="badge status-<?php echo strtolower($p['status']); ?>"><?php echo h($p['status']); ?></span></td>
-                        <td><?php echo date('M d, Y', strtotime($p['created_at'])); ?></td>
-                        <td>
-                            <a href="<?php echo BASE_URL; ?>products/view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm btn-primary">View</a>
-                            <form method="POST" action="<?php echo BASE_URL; ?>products/delete.php" style="display:inline;" onsubmit="return confirm('Delete this product?');">
-                                <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                            </form>
+                        <td><?php echo h($p['seller_name']); ?></td>
+                        <td>R <?php echo number_format($p['price'], 2); ?></td>
+                        <td><?php echo (int)$p['quantity']; ?></td>
+                        <td><span class="status-badge <?php echo $p['status'] === 'active' ? 'status-delivered' : 'status-transit'; ?>"><?php echo ucfirst($p['status']); ?></span></td>
+                        <td style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <a href="<?php echo BASE_URL; ?>products/edit.php?id=<?php echo $p['id']; ?>" class="btn btn-secondary btn-sm">Edit</a>
+                            <a href="<?php echo BASE_URL; ?>products/delete.php?id=<?php echo $p['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -111,37 +110,6 @@ require_once __DIR__ . '/../includes/header.php';
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 20px;
-}
-
-.badge.condition-new {
-    background: #10b981;
-    color: white;
-}
-
-.badge.condition-like\ new,
-.badge.condition-good {
-    background: #3b82f6;
-    color: white;
-}
-
-.badge.condition-fair {
-    background: #f59e0b;
-    color: white;
-}
-
-.badge.condition-poor {
-    background: var(--primary-red);
-    color: white;
-}
-
-.badge.status-active {
-    background: #10b981;
-    color: white;
-}
-
-.badge.status-sold {
-    background: var(--text-muted);
-    opacity: 0.7;
 }
 </style>
 

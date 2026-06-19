@@ -1,7 +1,9 @@
 <?php
 /**
  * includes/ShoppingCart.php
- * OOP Shopping Cart Class - WEDE6021 Requirement
+ * WEDE6021 OOP requirement.
+ * Methods required by rubric: AddItem, RemoveItem, Checkout,
+ * EmptyCart, Login, ProcessInput.
  */
 class ShoppingCart
 {
@@ -18,6 +20,12 @@ class ShoppingCart
         }
     }
 
+    /**
+     * Login()
+     * Single authentication method used by BOTH buyer/seller login
+     * and admin login — one implementation, no drift.
+     * Supports bcrypt (register.php) AND legacy MD5 (userData.txt).
+     */
     public function Login(string $email, string $password)
     {
         if (!$this->conn) return false;
@@ -41,6 +49,10 @@ class ShoppingCart
         return $ok ? $user : false;
     }
 
+    /**
+     * ProcessInput()
+     * Sanitises a value (or array of values) from user input.
+     */
     public function ProcessInput($value)
     {
         if (is_array($value)) {
@@ -49,12 +61,18 @@ class ShoppingCart
         return trim(stripslashes((string)$value));
     }
 
+    /**
+     * AddItem()
+     * Increments quantity if item already in cart (rubric requirement).
+     * Caps at available stock so you cannot order more than exists.
+     * Stores brand in session for display in cart.
+     */
     public function AddItem(int $productId, int $qty = 1): bool
     {
         if (!$this->conn) return false;
 
         $stmt = mysqli_prepare($this->conn,
-            "SELECT id, title, price, seller_id, image, quantity
+            "SELECT id, title, brand, price, seller_id, image, quantity
              FROM tblProducts WHERE id = ? AND status = 'active' LIMIT 1");
         if (!$stmt) return false;
 
@@ -74,6 +92,7 @@ class ShoppingCart
             $_SESSION['cart'][$productId] = [
                 'id'        => $p['id'],
                 'title'     => $p['title'],
+                'brand'     => $p['brand'] ?? '',
                 'price'     => $p['price'],
                 'quantity'  => min($qty, $stock),
                 'seller_id' => $p['seller_id'],
@@ -83,6 +102,10 @@ class ShoppingCart
         return true;
     }
 
+    /**
+     * RemoveItem()
+     * Removes a product line from the cart.
+     */
     public function RemoveItem(int $productId): bool
     {
         if (isset($_SESSION['cart'][$productId])) {
@@ -92,6 +115,10 @@ class ShoppingCart
         return false;
     }
 
+    /**
+     * UpdateQuantity()
+     * Qty < 1 triggers removal (handles "Update" input control).
+     */
     public function UpdateQuantity(int $productId, int $qty): bool
     {
         if ($qty < 1) return $this->RemoveItem($productId);
@@ -113,8 +140,19 @@ class ShoppingCart
         return $t;
     }
 
+    /**
+     * EmptyCart()
+     * Called automatically after a successful Checkout().
+     */
     public function EmptyCart(): void { $_SESSION['cart'] = []; }
 
+    /**
+     * Checkout()
+     * Wrapped in a DB transaction — if ANY write fails, everything
+     * rolls back so you never get a half-created order.
+     * Decrements stock; marks listing 'sold' when it hits zero.
+     * Returns order_id, order_num (ORD-000001), session_id, total.
+     */
     public function Checkout(array $delivery): array
     {
         $items = $this->GetItems();

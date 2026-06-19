@@ -64,6 +64,9 @@ require_once __DIR__ . '/../includes/header.php';
                 </a>
                 <div class="card-body">
                     <p class="card-meta"><?php echo h($p['category_name']); ?> · <?php echo h($p['condition']); ?></p>
+                    <?php if (!empty($p['brand'])): ?>
+                        <p class="card-meta"><strong>Brand:</strong> <?php echo h($p['brand']); ?></p>
+                    <?php endif; ?>
                     <div class="card-title"><?php echo h($p['title']); ?></div>
                     <div class="card-price">R <?php echo number_format($p['price'], 2); ?></div>
                     <p class="card-meta">by <?php echo h($p['seller_name']); ?></p>

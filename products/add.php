@@ -9,19 +9,30 @@ $errors = [];
 $post   = [];
 $cats   = mysqli_fetch_all(mysqli_query($conn, "SELECT * FROM categories ORDER BY name"), MYSQLI_ASSOC);
 
+$sellers = [];
+if (isAdmin()) {
+    $sellers = mysqli_fetch_all(
+        mysqli_query($conn, "SELECT id, name, email FROM tblUser WHERE role IN ('seller','admin') AND is_verified=1 ORDER BY name"),
+        MYSQLI_ASSOC
+    );
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['title']       = sanitize($_POST['title']       ?? '');
+    $post['brand']       = sanitize($_POST['brand']       ?? '');
     $post['description'] = sanitize($_POST['description'] ?? '');
     $post['price']       = floatval($_POST['price']        ?? 0);
     $post['category_id'] = intval($_POST['category_id']     ?? 0);
     $post['condition']   = sanitize($_POST['condition']    ?? 'Good');
     $post['quantity']    = max(1, intval($_POST['quantity']  ?? 1));
-    $sellerId = (int)$_SESSION['user_id'];
+    $sellerId = isAdmin() ? intval($_POST['seller_id'] ?? 0) : (int)$_SESSION['user_id'];
 
     if (empty($post['title']))      $errors[] = 'Title is required.';
+    if (empty($post['brand']))      $errors[] = 'Brand is required.';
     if (empty($post['description'])) $errors[] = 'Description is required.';
     if ($post['price'] <= 0)        $errors[] = 'Price must be greater than zero.';
     if ($post['category_id'] <= 0)  $errors[] = 'Please select a category.';
+    if ($sellerId <= 0)              $errors[] = 'Please select a seller.';
     if (!in_array($post['condition'], ['New','Like New','Good','Fair','Poor'])) $errors[] = 'Invalid condition.';
 
     $image_path = '';
@@ -36,22 +47,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (move_uploaded_file($_FILES['image']['tmp_name'], UPLOAD_DIR . $filename)) {
                 $image_path = 'uploads/' . $filename;
             } else {
-                $errors[] = 'Failed to upload image.';
+                $errors[] = 'Failed to upload image — check that assets/images/uploads/ is writable.';
             }
         }
     }
 
     if (empty($errors)) {
         $stmt = mysqli_prepare($conn,
-            "INSERT INTO tblProducts (seller_id, category_id, title, description, price, `condition`, image, quantity)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'iissdssi',
-            $sellerId, $post['category_id'], $post['title'], $post['description'],
-            $post['price'], $post['condition'], $image_path, $post['quantity']);
+            "INSERT INTO tblProducts (seller_id, category_id, title, brand, description, price, `condition`, image, quantity)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'iissdsssi',
+            $sellerId, $post['category_id'], $post['title'], $post['brand'],
+            $post['description'], $post['price'], $post['condition'],
+            $image_path, $post['quantity']);
         if (mysqli_stmt_execute($stmt)) {
-            redirect(BASE_URL . 'products/index.php');
+            redirect(BASE_URL . (isAdmin() ? 'admin/products.php' : 'products/index.php'));
         } else {
-            $errors[] = 'Failed to save listing.';
+            $errors[] = 'Failed to save listing. Please try again.';
         }
         mysqli_stmt_close($stmt);
     }
@@ -63,9 +75,24 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="form-wrap">
     <?php foreach ($errors as $e) echo displayError($e); ?>
     <form method="POST" action="" enctype="multipart/form-data">
+        <?php if (isAdmin()): ?>
+        <div class="form-group">
+            <label for="seller_id">Assign to Seller</label>
+            <select id="seller_id" name="seller_id" class="form-control" required>
+                <option value="">Select seller…</option>
+                <?php foreach ($sellers as $s): ?>
+                    <option value="<?php echo $s['id']; ?>"><?php echo h($s['name'] . ' — ' . $s['email']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php endif; ?>
         <div class="form-group">
             <label for="title">Title</label>
             <input type="text" id="title" name="title" class="form-control" required value="<?php echo h($post['title'] ?? ''); ?>">
+        </div>
+        <div class="form-group">
+            <label for="brand">Brand</label>
+            <input type="text" id="brand" name="brand" class="form-control" required value="<?php echo h($post['brand'] ?? ''); ?>" placeholder="e.g. Levi's, Nike, Zara">
         </div>
         <div class="form-group">
             <label for="category_id">Category</label>

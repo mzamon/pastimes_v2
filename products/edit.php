@@ -25,6 +25,7 @@ $post   = $product;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post = [
         'title'       => sanitize($_POST['title']       ?? ''),
+        'brand'       => sanitize($_POST['brand']       ?? ''),
         'description' => sanitize($_POST['description'] ?? ''),
         'price'       => floatval($_POST['price']        ?? 0),
         'category_id' => intval($_POST['category_id']     ?? 0),
@@ -33,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     if (empty($post['title']))       $errors[] = 'Title is required.';
+    if (empty($post['brand']))       $errors[] = 'Brand is required.';
     if (empty($post['description']))  $errors[] = 'Description is required.';
     if ($post['price'] <= 0)         $errors[] = 'Price must be greater than zero.';
     if ($post['category_id'] <= 0)   $errors[] = 'Please select a category.';
@@ -58,13 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = $post['quantity'] > 0 ? 'active' : 'sold';
         $upd = mysqli_prepare($conn,
             "UPDATE tblProducts
-             SET category_id=?, title=?, description=?, price=?, `condition`=?, image=?, quantity=?, status=?, updated_at=NOW()
+             SET category_id=?, title=?, brand=?, description=?, price=?, `condition`=?, image=?, quantity=?, status=?, updated_at=NOW()
              WHERE id=?");
-        mysqli_stmt_bind_param($upd, 'issdssisi',
-            $post['category_id'], $post['title'], $post['description'], $post['price'],
-            $post['condition'], $image_path, $post['quantity'], $status, $id);
+        mysqli_stmt_bind_param($upd, 'isssdssisi',
+            $post['category_id'], $post['title'], $post['brand'],
+            $post['description'], $post['price'], $post['condition'],
+            $image_path, $post['quantity'], $status, $id);
         if (mysqli_stmt_execute($upd)) {
-            redirect(BASE_URL . 'products/view.php?id=' . $id);
+            redirect(BASE_URL . (isAdmin() ? 'admin/products.php' : 'products/view.php?id=' . $id));
         } else {
             $errors[] = 'Failed to update listing.';
         }
@@ -81,6 +84,10 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="form-group">
             <label for="title">Title</label>
             <input type="text" id="title" name="title" class="form-control" required value="<?php echo h($post['title'] ?? ''); ?>">
+        </div>
+        <div class="form-group">
+            <label for="brand">Brand</label>
+            <input type="text" id="brand" name="brand" class="form-control" required value="<?php echo h($post['brand'] ?? ''); ?>" placeholder="e.g. Levi's, Nike, Zara">
         </div>
         <div class="form-group">
             <label for="category_id">Category</label>

@@ -1,7 +1,7 @@
 <?php
 /**
  * wishlist/index.php
- * Display wishlist items in product grid
+ * Display wishlist items in product grid with brand
  */
 $pageTitle = 'Wishlist';
 require_once __DIR__ . '/../config/db.php';
@@ -11,7 +11,7 @@ requireLogin();
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch wishlist items
+// Fetch wishlist items – p.* includes brand column
 $sql = "SELECT p.*, c.name AS category_name, u.name AS seller_name, w.id AS wishlist_id
         FROM tblWishlist w
         JOIN tblProducts p ON w.product_id = p.id
@@ -47,6 +47,9 @@ require_once __DIR__ . '/../includes/header.php';
                 </a>
                 <div class="product-info">
                     <h3><?php echo h($p['title']); ?></h3>
+                    <?php if (!empty($p['brand'])): ?>
+                        <p class="brand"><strong>Brand:</strong> <?php echo h($p['brand']); ?></p>
+                    <?php endif; ?>
                     <p class="category"><?php echo h($p['category_name']); ?></p>
                     <p class="seller">by <?php echo h($p['seller_name']); ?></p>
                     <p class="price">R<?php echo number_format($p['price'], 2); ?></p>
