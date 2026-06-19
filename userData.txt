@@ -1,0 +1,293 @@
+USER DATA FOR POE TESTING
+==========================================
+
+1. SAMPLE USERS (use password: "password")
+
+Admin User:
+- Email: admin@pastimes.co.za
+- Password: password
+- Role: Admin
+- Status: Verified
+
+Buyer 1:
+- Email: john@example.com
+- Name: John Buyer
+- Password: password
+- Role: Buyer
+- Status: Verified
+
+Buyer 2:
+- Email: buyer@pastimes.co.za
+- Name: Demo Buyer
+- Password: password
+- Role: Buyer
+- Status: Verified
+
+Seller 1:
+- Email: sarah@example.com
+- Name: Sarah Seller
+- Password: password
+- Role: Seller
+- Status: Verified & Approved
+
+Seller 2:
+- Email: mike@example.com
+- Name: Mike Seller
+- Password: password
+- Role: Seller
+- Status: Verified & Approved
+
+Seller 3:
+- Email: demo@pastimes.co.za
+- Name: Demo Seller
+- Password: password
+- Role: Seller
+- Status: Verified & Approved
+
+
+TESTING WORKFLOWS
+==========================================
+
+TEST 1: User Registration
+---------
+1. Navigate to /auth/register.php
+2. Fill in form:
+   - Name: Test User
+   - Email: test@example.com
+   - Password: password123
+   - Confirm: password123
+3. Submit
+4. Login with created account
+5. Verify access to buyer features
+
+
+TEST 2: Seller Request Workflow
+---------
+1. Login as buyer@pastimes.co.za
+2. Navigate to "Become Seller" link
+3. Fill request form:
+   - Motivation: "I have vintage clothing to sell"
+4. Submit request
+5. Login as admin@pastimes.co.za
+6. Go to Admin > Verify Users
+7. In "Pending Seller Requests" section
+8. Click "Approve" for the request
+9. Original user now has seller role & can list products
+
+
+TEST 3: Admin User Management
+---------
+1. Login as admin@pastimes.co.za
+2. Navigate to Admin > Users
+3. Test filtering by role (Buyer, Seller, Admin)
+4. Test search by name or email
+5. Click "Edit" on a user
+6. Modify role or verification status
+7. Delete a test user (confirm dialog appears)
+
+
+TEST 4: Product Listing & Browsing
+---------
+1. Login as seller (sarah@example.com)
+2. Navigate to "Sell Item" link
+3. Fill form:
+   - Title: Vintage Levi's 501
+   - Description: Classic denim jeans
+   - Price: 350.00
+   - Category: Vintage
+   - Condition: Good
+   - Quantity: 2
+4. Upload image
+5. Submit
+6. Navigate to /products/index.php
+7. Verify product appears
+8. Test filters:
+   - Filter by category
+   - Search by keyword
+   - Price range (if implemented)
+
+
+TEST 5: Shopping Cart & Checkout
+---------
+1. Login as john@example.com (buyer)
+2. Browse /products/index.php
+3. Add 3 products to cart
+4. View cart (/cart/index.php)
+5. Verify items and quantities
+6. Update quantities
+7. Remove one item
+8. Proceed to checkout
+9. Fill delivery address
+10. Select payment method
+11. Confirm order
+
+
+TEST 6: Messaging System
+---------
+1. Login as buyer@pastimes.co.za
+2. Find a product (e.g., Sarah's listing)
+3. Click "Send Message" or similar
+4. Compose message to seller
+5. Send message
+6. Login as sarah@example.com
+7. Navigate to Messages > Inbox
+8. Verify message received with unread badge
+9. Click conversation to view thread
+10. Reply to message
+11. Verify conversation thread shows all messages
+
+
+TEST 7: Wishlist
+---------
+1. Login as john@example.com
+2. Browse products
+3. Click heart/wishlist button on multiple items
+4. Navigate to Wishlist
+5. Verify items appear in wishlist
+6. Remove item from wishlist
+7. Verify item count updates
+8. Verify item is removed from wishlist
+
+
+TEST 8: Admin Dashboard
+---------
+1. Login as admin@pastimes.co.za
+2. Navigate to Dashboard
+3. Verify stats display:
+   - Total users (6)
+   - Total products (30)
+   - Total orders
+4. Review recent users table
+5. Review recent products table
+6. Review recent orders table
+7. Click links to full management pages
+
+
+TEST 9: Admin Product Management
+---------
+1. Login as admin
+2. Navigate to Admin > Clothes
+3. Search for product
+4. Filter by status (active/sold)
+5. View product details (click View button)
+6. Delete a product (confirm dialog)
+7. Verify product removed
+
+
+TEST 10: Admin Order Management
+---------
+1. Login as admin
+2. Navigate to Admin > Orders
+3. Filter by status (Pending, Packed, In Transit, Delivered)
+4. Change order status
+5. Verify status updates immediately
+6. Verify order appears in appropriate filtered view
+
+
+EDGE CASES TO TEST
+==========================================
+
+1. Try registering with existing email
+   - Expected: Error message "Email already exists"
+
+2. Try login with wrong password
+   - Expected: Error message "Invalid email or password"
+
+3. Try accessing admin pages as buyer
+   - Expected: Redirect to home page
+
+4. Try accessing seller pages as buyer
+   - Expected: Redirect to home page or error
+
+5. Try adding to cart while not logged in
+   - Expected: Redirect to login page
+
+6. Try deleting user while viewing as that user
+   - Expected: Error "Cannot delete your own account"
+
+7. Try editing a product you don't own (seller)
+   - Expected: Error or redirect
+
+8. Try sending message to yourself
+   - Expected: Error "Cannot message yourself"
+
+9. Try checkout with empty cart
+   - Expected: Error or redirect to cart
+
+10. Try accessing order that belongs to different user
+    - Expected: Error or redirect
+
+
+DATABASE QUERIES FOR TESTING
+==========================================
+
+Check user count:
+SELECT COUNT(*) FROM tblUser;
+Expected: 6
+
+Check product count:
+SELECT COUNT(*) FROM tblProducts WHERE status = 'active';
+Expected: 30
+
+Check verified users:
+SELECT COUNT(*) FROM tblUser WHERE is_verified = 1;
+Expected: 6
+
+Check pending seller requests:
+SELECT COUNT(*) FROM tblUser WHERE seller_request = 'pending';
+Expected: 0 (all approved in sample data)
+
+Check total orders:
+SELECT COUNT(*) FROM tblOrders;
+Expected: 0 (initially, grows with testing)
+
+Check messages:
+SELECT COUNT(*) FROM tblMessages;
+Expected: 0 (initially, grows with testing)
+
+Check wishlist items:
+SELECT COUNT(*) FROM tblWishlist;
+Expected: 0 (initially, grows with testing)
+
+
+PERFORMANCE TESTING
+==========================================
+
+Load Test URLs:
+- /index.php (homepage)
+- /products/index.php (product listing)
+- /admin/dashboard.php (admin panel)
+
+Expected Response Times:
+- Homepage: < 500ms
+- Product List: < 1s
+- Admin Dashboard: < 1.5s
+
+Test with many products:
+- Insert 1000 products
+- Test pagination performance
+- Test search performance
+
+
+SECURITY TESTING
+==========================================
+
+1. SQL Injection
+   - Try searching: ' OR '1'='1
+   - Expected: Treated as literal string (safe)
+
+2. XSS Attempt
+   - Try product title: <script>alert('xss')</script>
+   - Expected: Displayed as text, not executed
+
+3. Session Hijacking
+   - Try cookie manipulation
+   - Expected: Session validation fails
+
+4. CSRF (Cross-Site Request Forgery)
+   - Try form submissions from external site
+   - Expected: Either fails or requires session validation
+
+5. Unauthorized Access
+   - Try direct URL access to admin/orders.php as buyer
+   - Expected: Redirect to home page

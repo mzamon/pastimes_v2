@@ -1,0 +1,357 @@
+SAMPLE ORDERS FOR POE TESTING
+==========================================
+
+Note: These are suggested sample orders for manual testing
+The database schema supports order creation but no orders are pre-seeded
+to allow fresh testing of checkout workflow.
+
+
+SUGGESTED TEST SCENARIOS
+==========================================
+
+SCENARIO 1: Buyer Checkout - Complete Order
+
+Order Details:
+- Buyer: john@example.com (John Buyer)
+- Items:
+  1. Vintage Levi's 501 Jeans (R350) x1
+  2. Leather Belt (R180) x1
+  3. Nike Air Force 1 Low White (R1100) x1
+- Subtotal: R1630.00
+- Delivery Address: 123 Main Street, Cape Town, 8000
+- Payment Method: Credit Card
+- Order Status: Pending
+
+Expected Flow:
+1. Add 3 items to cart
+2. View cart, verify items and prices
+3. Proceed to checkout
+4. Enter delivery address
+5. Select payment method
+6. Confirm order
+7. Order appears in "My Orders" with status "Pending"
+8. Seller (Mike for Nike, Sarah for Levi's & Belt) receives order
+9. Status updates: Pending → Packed → In Transit → Delivered
+
+
+SCENARIO 2: Multiple Items from Same Seller
+
+Order Details:
+- Buyer: buyer@pastimes.co.za (Demo Buyer)
+- Items (all from Sarah Seller):
+  1. Ralph Lauren Polo Shirt (R220) x2
+  2. North Face Puffer Jacket (R890) x1
+  3. Polo Ralph Lauren Oxford Shirt (R280) x1
+- Subtotal: R1610.00
+- Delivery Address: 456 Oak Avenue, Johannesburg, 2001
+- Payment Method: Debit Card
+
+Expected Flow:
+1. All items from same seller
+2. Single order entry created
+3. Seller notified of bulk order
+
+
+SCENARIO 3: Multiple Orders in Single Session
+
+Order 1:
+- Item: Zara Floral Midi Dress (R420) x1
+- Status: Completed
+- Date: [Current Date]
+
+Order 2 (Created later same session):
+- Item: Supreme Box Logo Hoodie (R950) x1
+- Status: Pending
+- Date: [Current Date]
+
+Expected Flow:
+1. User can track both orders in "My Orders"
+2. Different statuses visible
+3. Can message sellers about both orders separately
+
+
+SCENARIO 4: Low-Value Order
+
+Order Details:
+- Buyer: john@example.com
+- Items:
+  1. Nike Flex Shorts (R85) x1
+- Subtotal: R85.00
+- Delivery Address: 789 Pine Road, Durban, 4000
+
+Purpose: Test low-value order handling
+
+
+SCENARIO 5: High-Value Luxury Item
+
+Order Details:
+- Buyer: buyer@pastimes.co.za
+- Items:
+  1. Stone Island Nylon Jacket (R1800) x1
+- Subtotal: R1800.00
+- Delivery Address: 321 Diamond Lane, Pretoria, 0001
+
+Purpose: Test high-value item handling
+
+
+SCENARIO 6: Bulk Order (Many Items)
+
+Order Details:
+- Buyer: buyer@pastimes.co.za
+- Items:
+  1. Champion Reverse Weave Sweatshirt (R310) x1
+  2. Dickies 874 Work Pants (R220) x1
+  3. Puma RS-X Sneakers (R510) x2
+  4. Michael Kors Tote Bag (R950) x1
+  5. Asics Gel-Nimbus 24 (R720) x1
+- Subtotal: R3440.00
+- Item Count: 6
+- Delivery Address: 555 Gold Street, Stellenbosch, 7600
+
+Purpose: Test bulk order processing
+
+
+ORDER MANAGEMENT WORKFLOW - ADMIN
+==========================================
+
+ADMIN TEST CASE 1: View All Orders
+
+Expected Screen:
+- Table showing all orders
+- Columns: Order ID, Buyer, Items, Total, Status, Date, Action
+- Sample data (once orders created):
+  Order #1: john@example.com, 3 items, R1630, Pending, [Date]
+  Order #2: buyer@pastimes.co.za, 4 items, R1610, Pending, [Date]
+
+Status Filters:
+- All Status
+- Pending (initial state)
+- Packed (in preparation)
+- In Transit (shipped)
+- Delivered (completed)
+
+
+ADMIN TEST CASE 2: Update Order Status
+
+Flow:
+1. Click on Pending filter
+2. Select order
+3. Use dropdown to change status
+4. Options: Pending → Packed → In Transit → Delivered
+5. Click "Update"
+6. Status changes immediately
+7. Verify appears in new status filter
+
+
+ADMIN TEST CASE 3: Status Progression
+
+Example Progression:
+- Created: Status = Pending
+- Seller packs items: Status = Packed
+- Handed to courier: Status = In Transit
+- Delivered to buyer: Status = Delivered
+
+Admin can view entire history and update status
+
+
+SELLER TEST CASE 1: Order Management
+
+For Seller (sarah@example.com):
+
+Flow:
+1. Navigate to Orders > Manage Orders
+2. View all orders received for her products
+3. See items from orders
+4. Pack items and update status
+5. Status visible to buyer in real-time
+
+
+SELLER TEST CASE 2: Order Notification
+
+Expected Behavior:
+1. When order created, seller gets notification
+2. Items from seller appear in their order queue
+3. Seller can respond to buyer via Messages
+4. Seller manages inventory (though simplified in this version)
+
+
+BUYER TEST CASE 1: Track Order
+
+For Buyer (john@example.com):
+
+Flow:
+1. Navigate to "My Orders"
+2. See all placed orders
+3. Click order to view details
+4. See current status: Pending/Packed/In Transit/Delivered
+5. See items in order
+6. Estimated delivery timeframe (can be added)
+7. Message seller link
+
+
+BUYER TEST CASE 2: Order History
+
+Expected View:
+- List of all orders placed
+- Most recent first
+- Statuses clearly visible
+- Total amount spent
+- Links to message sellers
+- Links to leave reviews (future)
+
+
+MANUAL TEST DATA QUERIES
+==========================================
+
+After completing Scenario 1 order, run:
+
+-- View created order
+SELECT * FROM tblOrders WHERE buyer_id = (SELECT id FROM tblUser WHERE email = 'john@example.com');
+
+-- View order items
+SELECT oi.*, p.title FROM order_items oi 
+JOIN tblProducts p ON oi.product_id = p.id
+WHERE oi.order_id = 1;
+
+-- View seller's received orders
+SELECT o.* FROM tblOrders o
+JOIN order_items oi ON o.id = oi.order_id
+JOIN tblProducts p ON oi.product_id = p.id
+WHERE p.seller_id = (SELECT id FROM tblUser WHERE email = 'sarah@example.com');
+
+-- Calculate total revenue
+SELECT SUM(total) as revenue FROM tblOrders;
+
+-- Orders by status
+SELECT status, COUNT(*) as count FROM tblOrders GROUP BY status;
+
+
+EXPECTED DATABASE STATE AFTER FULL TESTING
+==========================================
+
+Sample Results (if all 6 scenarios completed):
+
+Total Orders: 6
+Total Revenue: R9,015.00 (approx)
+
+Orders Breakdown:
+- Pending: 2
+- Packed: 2
+- In Transit: 1
+- Delivered: 1
+
+Most Active Seller: Sarah Seller (appears in multiple orders)
+Most Frequent Buyer: buyer@pastimes.co.za (appears in 3+ orders)
+
+
+PERFORMANCE METRICS TO TEST
+==========================================
+
+1. Order Creation Time: Should complete in < 1 second
+2. Status Update: Should reflect immediately
+3. Buyer Order List Load: < 500ms with 20+ orders
+4. Admin Dashboard: Should load with order counts < 1 second
+5. Search by Buyer: < 500ms
+6. Search by Date Range: < 1 second
+
+
+EDGE CASES TO TEST IN ORDERS
+==========================================
+
+1. Out of Stock Item
+   - Expected: Cannot add to cart / shows error
+
+2. Seller Deletes Item After Added to Cart
+   - Expected: Item removed from cart or error on checkout
+
+3. Multiple Orders Same Seller
+   - Expected: Can be combined or separate (design choice)
+
+4. Order Timeout on Checkout
+   - Expected: Session preserved, can resume
+
+5. Payment Failure (Simulated)
+   - Expected: Order not created, money not taken
+
+6. Concurrent Orders Same User
+   - Expected: Both orders created successfully
+
+7. Very Large Order Value (R10,000+)
+   - Expected: Processes normally
+
+8. International Address (not typically in ZA)
+   - Expected: Accepted (or validation added)
+
+9. Status Downgrade (Delivered back to Pending)
+   - Expected: Admin can do this (or prevent if desired)
+
+10. Delete User with Pending Orders
+    - Expected: Cascade handled by FK constraint
+
+
+SAMPLE ORDER EMAILS / NOTIFICATIONS
+==========================================
+
+Buyer Email (Order Confirmation):
+---
+Subject: Order #1 Confirmed - Pastimes
+
+Dear John,
+
+Your order has been confirmed!
+
+Order Details:
+- Order ID: #1
+- Date: [Current Date]
+- Items: 3
+- Total: R1,630.00
+
+Items:
+1. Vintage Levi's 501 Jeans x1 (R350.00)
+2. Leather Belt x1 (R180.00)
+3. Nike Air Force 1 Low White x1 (R1,100.00)
+
+Delivery Address:
+123 Main Street
+Cape Town, 8000
+
+Status: Pending
+Your seller will pack your items shortly.
+
+Track your order: [Order Link]
+Message your seller: [Message Link]
+
+Thank you for shopping at Pastimes!
+---
+
+Seller Email (New Order):
+---
+Subject: New Order - You Have 1 Item to Ship
+
+Dear Sarah,
+
+You have received a new order!
+
+Order ID: #1
+Buyer: John Buyer
+Items: Ralph Lauren Polo Shirt x2
+
+Manage order: [Admin Link]
+Message buyer: [Message Link]
+
+Please pack and ship within 2 days.
+---
+
+Buyer Email (Status Update):
+---
+Subject: Order #1 Status Update - Packed
+
+Dear John,
+
+Great news! Your order has been packed and is ready to ship.
+
+Current Status: Packed
+Expected Delivery: [Date Range]
+
+Track your order: [Order Link]
+---
