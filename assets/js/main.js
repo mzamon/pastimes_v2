@@ -38,12 +38,14 @@ function confirmAction(message = 'Are you sure?') {
     return confirm(message);
 }
 
-// ── Cart Add to Cart (if needed) ─────────────────────────────
+// ── Cart Add to Cart ─────────────────────────────────────────
 
 function addToCart(productId) {
+    // Use the current URL to determine base path
+    const basePath = window.location.pathname.includes('/pastimes_v2/') ? '/pastimes_v2/' : '/';
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '/pastimes/cart/add.php';
+    form.action = basePath + 'cart/add.php';
     
     const input = document.createElement('input');
     input.type = 'hidden';
@@ -60,10 +62,12 @@ function addToCart(productId) {
 function toggleWishlist(productId, event) {
     event.preventDefault();
     
+    // Use the current URL to determine base path
+    const basePath = window.location.pathname.includes('/pastimes_v2/') ? '/pastimes_v2/' : '/';
     const button = event.currentTarget;
-    const isAdding = button.textContent.includes('♡');
+    const isAdding = button.textContent.includes('♡') || button.textContent.includes('Add to Wishlist');
     
-    const url = isAdding ? '/pastimes/wishlist/add.php' : '/pastimes/wishlist/remove.php';
+    const url = isAdding ? basePath + 'wishlist/add.php' : basePath + 'wishlist/remove.php';
     const formData = new FormData();
     formData.append('product_id', productId);
     
@@ -74,7 +78,7 @@ function toggleWishlist(productId, event) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            button.textContent = isAdding ? '❤' : '♡';
+            button.textContent = isAdding ? '❤ Remove from Wishlist' : '♡ Add to Wishlist';
             button.classList.toggle('active');
             
             // Show notification
@@ -92,6 +96,9 @@ function toggleWishlist(productId, event) {
 // ── Notification Toast ────────────────────────────────────────
 
 function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(el => el.remove());
+    
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -107,7 +114,9 @@ function showNotification(message, type = 'info') {
                         type === 'error' ? '#ef4444' : '#3b82f6',
         color: 'white',
         boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-        animation: 'slideIn 0.3s ease'
+        animation: 'slideIn 0.3s ease',
+        maxWidth: '350px',
+        fontSize: '0.95rem'
     });
     
     document.body.appendChild(notification);
@@ -143,6 +152,10 @@ style.textContent = `
             opacity: 0;
         }
     }
+    
+    .notification {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
 `;
 document.head.appendChild(style);
 
@@ -164,13 +177,18 @@ document.querySelectorAll('.quantity-spinner').forEach(spinner => {
     
     if (decreaseBtn) {
         decreaseBtn.addEventListener('click', () => {
-            if (input.value > 1) input.value--;
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+                // Trigger change event for any listeners
+                input.dispatchEvent(new Event('change'));
+            }
         });
     }
     
     if (increaseBtn) {
         increaseBtn.addEventListener('click', () => {
-            input.value++;
+            input.value = parseInt(input.value) + 1;
+            input.dispatchEvent(new Event('change'));
         });
     }
 });
@@ -182,7 +200,9 @@ if ('IntersectionObserver' in window) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
-                img.src = img.dataset.src || img.src;
+                if (img.dataset.src) {
+                    img.src = img.dataset.src;
+                }
                 img.classList.add('loaded');
                 observer.unobserve(img);
             }
@@ -219,6 +239,41 @@ function validatePassword(password) {
     return password.length >= 8;
 }
 
+function validateForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return true;
+    
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    let valid = true;
+    
+    inputs.forEach(input => {
+        if (!input.value.trim()) {
+            input.style.borderColor = '#ef4444';
+            valid = false;
+        } else {
+            input.style.borderColor = '';
+        }
+        
+        // Email validation
+        if (input.type === 'email' && input.value.trim()) {
+            if (!validateEmail(input.value.trim())) {
+                input.style.borderColor = '#ef4444';
+                valid = false;
+            }
+        }
+        
+        // Password validation
+        if (input.type === 'password' && input.value.trim()) {
+            if (!validatePassword(input.value.trim())) {
+                input.style.borderColor = '#ef4444';
+                valid = false;
+            }
+        }
+    });
+    
+    return valid;
+}
+
 // ── Debounce Helper ──────────────────────────────────────────
 
 function debounce(func, wait) {
@@ -243,5 +298,40 @@ if (searchInput) {
         // this.form.submit();
     }, 500));
 }
+
+// ── Auto-dismiss Alerts ──────────────────────────────────────
+
+document.querySelectorAll('.alert').forEach(alert => {
+    // Add close button if not present
+    if (!alert.querySelector('.alert-close')) {
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.className = 'alert-close';
+        closeBtn.style.cssText = `
+            float: right;
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+        `;
+        closeBtn.onclick = function() {
+            alert.style.display = 'none';
+        };
+        alert.appendChild(closeBtn);
+    }
+    
+    // Auto-dismiss success messages after 5 seconds
+    if (alert.classList.contains('alert-success')) {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.5s';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 500);
+        }, 5000);
+    }
+});
 
 console.log('Pastimes main.js loaded');
