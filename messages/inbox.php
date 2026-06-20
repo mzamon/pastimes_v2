@@ -11,37 +11,56 @@ requireLogin();
 
 $current_user = $_SESSION['user_id'];
 
-// Get conversations (last message from each user)
-$sql = "SELECT DISTINCT
-            CASE 
-                WHEN sender_id = ? THEN receiver_id
-                ELSE sender_id
-            END AS conversation_user_id,
-            (SELECT name FROM tblUser WHERE id = CASE 
-                WHEN sender_id = ? THEN receiver_id
-                ELSE sender_id
-            END) AS other_name,
-            (SELECT message FROM tblMessages m2
-             WHERE (m2.sender_id = tblMessages.sender_id AND m2.receiver_id = tblMessages.receiver_id)
-                OR (m2.sender_id = tblMessages.receiver_id AND m2.receiver_id = tblMessages.sender_id)
-             ORDER BY m2.sent_at DESC LIMIT 1) AS last_message,
-            (SELECT COUNT(*) FROM tblMessages m3
-             WHERE m3.receiver_id = ? AND m3.sender_id = CASE 
-                WHEN tblMessages.sender_id = ? THEN tblMessages.receiver_id
-                ELSE tblMessages.sender_id
-            END AND m3.is_read = 0) AS unread_count,
-            (SELECT MAX(sent_at) FROM tblMessages m4
-             WHERE (m4.sender_id = tblMessages.sender_id AND m4.receiver_id = tblMessages.receiver_id)
-                OR (m4.sender_id = tblMessages.receiver_id AND m4.receiver_id = tblMessages.sender_id)) AS last_sent
-        FROM tblMessages
-        WHERE sender_id = ? OR receiver_id = ?
-        ORDER BY last_sent DESC";
+// Get all messages where current user is sender or receiver
+$sql = "SELECT m.*, 
+               u_sender.name AS sender_name,
+               u_receiver.name AS receiver_name,
+               p.title AS product_title
+        FROM tblMessages m
+        LEFT JOIN tblUser u_sender ON m.sender_id = u_sender.id
+        LEFT JOIN tblUser u_receiver ON m.receiver_id = u_receiver.id
+        LEFT JOIN tblProducts p ON m.product_id = p.id
+        WHERE m.sender_id = ? OR m.receiver_id = ?
+        ORDER BY m.sent_at DESC";
 
 $stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, 'iiiiiiii', $current_user, $current_user, $current_user, $current_user, $current_user, $current_user, $current_user, $current_user);
+mysqli_stmt_bind_param($stmt, 'ii', $current_user, $current_user);
 mysqli_stmt_execute($stmt);
-$conversations = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
+$all_messages = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
 mysqli_stmt_close($stmt);
+
+// Group messages by conversation (other user + product)
+$conversations = [];
+foreach ($all_messages as $msg) {
+    // Determine the other user
+    $other_id = ($msg['sender_id'] == $current_user) ? $msg['receiver_id'] : $msg['sender_id'];
+    $key = $other_id . '_' . ($msg['product_id'] ?? 0);
+    
+    if (!isset($conversations[$key])) {
+        // Determine the other user's name
+        $other_name = ($msg['sender_id'] == $current_user) ? $msg['receiver_name'] : $msg['sender_name'];
+        
+        $conversations[$key] = [
+            'other_user_id'   => $other_id,
+            'other_user_name' => $other_name,
+            'product_id'      => $msg['product_id'],
+            'product_title'   => $msg['product_title'] ?? 'General',
+            'last_message'    => $msg['message'],
+            'last_sent_at'    => $msg['sent_at'],
+            'unread'          => ($msg['receiver_id'] == $current_user && $msg['is_read'] == 0),
+        ];
+    }
+    
+    // If this message is unread for current user, mark conversation as unread
+    if ($msg['receiver_id'] == $current_user && $msg['is_read'] == 0) {
+        $conversations[$key]['unread'] = true;
+    }
+}
+
+// Sort conversations by last sent time (newest first)
+usort($conversations, function($a, $b) {
+    return strtotime($b['last_sent_at']) - strtotime($a['last_sent_at']);
+});
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -49,22 +68,30 @@ require_once __DIR__ . '/../includes/header.php';
 <h1 class="page-title">Messages</h1>
 
 <?php if (empty($conversations)): ?>
-    <div class="alert alert-info">No messages yet. <a href="<?php echo BASE_URL; ?>products/index.php">Browse products</a> to start chatting!</div>
+    <div class="alert alert-info">No messages yet. Browse a listing and message a seller to get started.</div>
 <?php else: ?>
-    <div class="messages-list">
-        <?php foreach ($conversations as $conv): ?>
-            <a href="<?php echo BASE_URL; ?>messages/chat.php?user_id=<?php echo $conv['conversation_user_id']; ?>" class="message-item">
-                <div class="message-user">
-                    <strong><?php echo h($conv['other_name']); ?></strong>
-                    <?php if ((int)$conv['unread_count'] > 0): ?>
-                        <span class="badge unread"><?php echo (int)$conv['unread_count']; ?></span>
+    <?php foreach ($conversations as $conv): ?>
+        <div class="conv-card">
+            <div class="conv-info">
+                <h3>
+                    <?php echo h($conv['product_title']); ?>
+                    <?php if ($conv['unread']): ?>
+                        <span class="status-badge status-pending" style="margin-left:0.4rem;">New</span>
                     <?php endif; ?>
-                </div>
-                <p class="message-preview"><?php echo h(substr($conv['last_message'], 0, 100)); ?></p>
-                <small><?php echo date('M d, Y g:i A', strtotime($conv['last_sent'])); ?></small>
-            </a>
-        <?php endforeach; ?>
-    </div>
+                </h3>
+                <p class="text-muted" style="font-size:0.85rem; margin-bottom:0.25rem;">
+                    With <strong><?php echo h($conv['other_user_name']); ?></strong>
+                </p>
+                <p class="conv-preview"><?php echo h(mb_strimwidth($conv['last_message'], 0, 80, '…')); ?></p>
+                <small class="text-muted"><?php echo date('d M Y H:i', strtotime($conv['last_sent_at'])); ?></small>
+            </div>
+            <?php
+                $chatUrl = BASE_URL . 'messages/chat.php?user_id=' . $conv['other_user_id'];
+                if (!empty($conv['product_id'])) $chatUrl .= '&product_id=' . $conv['product_id'];
+            ?>
+            <a href="<?php echo $chatUrl; ?>" class="btn btn-primary btn-sm">Open Chat</a>
+        </div>
+    <?php endforeach; ?>
 <?php endif; ?>
 
 <style>
